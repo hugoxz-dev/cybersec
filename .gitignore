@@ -1,0 +1,23 @@
+# Local secrets and environment overrides
+.env
+.env.*
+!.env.example
+
+# Dependencies and generated files
+/vendor/
+*.log
+/tmp/
+/cache/
+
+# User-uploaded content
+/public/assets/uploads/*
+!/public/assets/uploads/profiles/
+/public/assets/uploads/profiles/*
+!/public/assets/uploads/profiles/.gitkeep
+
+# Editor and operating-system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
