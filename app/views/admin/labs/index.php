@@ -10,7 +10,7 @@ require_once __DIR__ . '/../../layouts/sidebar.php';
 
 <h2>
 
-🧪 Gerenciar Laboratórios
+Gerenciar Laboratórios
 
 </h2>
 
@@ -112,8 +112,14 @@ class="btn btn-outline-danger btn-sm">
 
 <td>
 
-<?= $lab['xp_reward'] ?>
+<?= htmlspecialchars(
+    $lab['category']
+) ?>
 
+</td>
+
+<td>
+<?= $lab['xp_reward'] ?>
 </td>
 
 <td>
@@ -130,6 +136,7 @@ Editar
 method="POST"
 action="<?= BASE_URL ?>/admin/labs/delete"
 style="display:inline;">
+<?= Csrf::field() ?>
 
 <input
 type="hidden"
@@ -147,10 +154,6 @@ Excluir
 
 </form>
 
-</td>
-
-<td>
-<?= $lab['xp_reward'] ?>
 </td>
 
 </tr>

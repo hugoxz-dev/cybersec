@@ -2,157 +2,118 @@
 
 class LessonController extends Controller
 {
+    private const QUIZ_XP = 20;
+
     private Lesson $lessonModel;
+
+    private LessonProgress $progressModel;
 
     public function __construct()
     {
-        $this->lessonModel =
-            new Lesson();
+        $this->lessonModel = new Lesson();
+        $this->progressModel = new LessonProgress();
     }
 
     public function show(): void
     {
         Auth::requireLogin();
 
-        $id = (int)($_GET['id'] ?? 0);
-
-        $lesson = $this->lessonModel
-            ->findById($id);
-
-            $progressModel =
-    new LessonProgress();
-
-$previousLesson =
-    $this->lessonModel
-        ->getPreviousLesson(
-            $lesson['path_id'],
-            $lesson['lesson_order']
+        $lesson = $this->findAccessibleLesson(
+            (int)($_GET['id'] ?? 0)
         );
-
-if ($previousLesson) {
-
-    $completed =
-        $progressModel
-            ->isLessonCompleted(
-                Auth::id(),
-                $previousLesson['id']
-            );
-
-    if (!$completed) {
-
-        Session::set(
-            'error',
-            'Conclua a aula anterior primeiro.'
-        );
-
-        header(
-            'Location: ' .
-            BASE_URL .
-            '/path?id=' .
-            $lesson['path_id']
-        );
-
-        exit;
-    }
-}
-
-        if (!$lesson) {
-
-            throw new Exception(
-                'Aula não encontrada.'
-            );
-        }
-
-        $quiz = $this->lessonModel
-            ->getQuiz($id);
 
         $this->view(
             'lessons/show',
             [
                 'lesson' => $lesson,
-                'quiz' => $quiz
+                'quiz' => $this->lessonModel->getQuiz($lesson['id'])
             ]
         );
     }
 
     public function submitQuiz(): void
     {
-      Auth::requireLogin();
+        Auth::requireLogin();
 
-      $lessonId =
-         (int)($_POST['lesson_id'] ?? 0);
+        $lesson = $this->findAccessibleLesson(
+            (int)($_POST['lesson_id'] ?? 0)
+        );
 
-      $quiz = $this->lessonModel
-        ->getQuiz($lessonId);
+        $lessonId = (int)$lesson['id'];
 
-      $correct = 0;
+        $quiz = $this->lessonModel->getQuiz($lessonId);
 
-      foreach ($quiz as $question) {
+        $correct = 0;
 
-         $answer =
-            $_POST[
-                'question_' .
-                $question['id']
-            ] ?? '';
+        foreach ($quiz as $question) {
 
-         if (
-            strtoupper($answer) ===
-            strtoupper(
-                $question['correct_option']
-            )
-         ) {
-            $correct++;
-         }
-     }
+            $answer = $_POST['question_' . $question['id']] ?? '';
 
-     $total = count($quiz);
+            if (
+                is_string($answer) &&
+                strtoupper($answer) === strtoupper($question['correct_option'])
+            ) {
+                $correct++;
+            }
+        }
 
-     if (
-        $total > 0 &&
-        $correct === $total
-     ) {
+        $total = count($quiz);
 
-         $progress =
-            new LessonProgress();
+        if ($total === 0 || $correct !== $total) {
 
-         $progress->complete(
-            Auth::id(),
-            $lessonId
-         );
+            Session::set('error', "Você acertou {$correct}/{$total}");
 
-         $user =
-            new User();
+            $this->redirect('lesson?id=' . $lessonId);
+        }
 
-         $user->addXp(
-            Auth::id(),
-            20
-         );
+        if ($this->progressModel->complete(Auth::id(), $lessonId)) {
 
-         $user->updateLevel(
-            Auth::id()
-         );
- 
-         Session::set(
-            'success',
-            'Quiz concluído! +20 XP'
-         );
-     }
-     else {
+            (new User())->reward(
+                Auth::id(),
+                self::QUIZ_XP,
+                'AULA',
+                'Concluiu a aula: ' . $lesson['title']
+            );
 
-         Session::set(
-            'error',
-            "Você acertou {$correct}/{$total}"
-         );
-     }
+            Session::set('success', 'Quiz concluído! +' . self::QUIZ_XP . ' XP');
 
-     header(
-        'Location: ' .
-        BASE_URL .
-        '/lesson?id=' .
-        $lessonId
-     );
+        } else {
 
-     exit;
- }
+            Session::set(
+                'success',
+                'Todas certas! Você já havia concluído esta aula, então nenhum XP foi adicionado.'
+            );
+        }
 
+        $this->redirect('lesson?id=' . $lessonId);
+    }
+
+    /**
+     * Busca a aula e garante que a anterior da trilha foi concluída.
+     * Usado tanto para ver a aula quanto para enviar o quiz.
+     */
+    private function findAccessibleLesson(int $id): array
+    {
+        $lesson = $this->lessonModel->findById($id);
+
+        if (!$lesson) {
+            throw new NotFoundException('Aula não encontrada.');
+        }
+
+        $previous = $this->lessonModel->getPreviousLesson(
+            $lesson['path_id'],
+            $lesson['lesson_order']
+        );
+
+        if (
+            $previous &&
+            !$this->progressModel->isLessonCompleted(Auth::id(), $previous['id'])
+        ) {
+            Session::set('error', 'Conclua a aula anterior primeiro.');
+
+            $this->redirect('path?id=' . $lesson['path_id']);
+        }
+
+        return $lesson;
+    }
 }

@@ -105,7 +105,7 @@ class QuestionController extends Controller
 
     if(!$question) {
 
-        throw new Exception(
+        throw new NotFoundException(
             'Pergunta não encontrada.'
         );
     }
@@ -131,7 +131,7 @@ class QuestionController extends Controller
 
     if(!$question) {
 
-        throw new Exception(
+        throw new NotFoundException(
             'Pergunta não encontrada.'
         );
     }

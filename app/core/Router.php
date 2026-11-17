@@ -23,8 +23,8 @@ class Router
             PHP_URL_PATH
         );
 
-         $basePath = dirname(
-         $_SERVER['SCRIPT_NAME']
+        $basePath = dirname(
+            $_SERVER['SCRIPT_NAME']
         );
 
         $uri = str_replace($basePath, '', $uri);
@@ -34,38 +34,35 @@ class Router
         }
 
         if (!isset($this->routes[$method][$uri])) {
-
-            http_response_code(404);
-
-            echo "<h1>404 - Página não encontrada</h1>";
-
-            exit;
+            throw new NotFoundException('Página não encontrada.');
         }
 
-        $action = $this->routes[$method][$uri];
+        // Todo POST precisa do token CSRF da sessão.
+        if ($method === 'POST' && !Csrf::verify()) {
+            ErrorPage::render(
+                403,
+                'Sessão expirada',
+                'O formulário expirou ou veio de outro site. Volte, recarregue a página e tente de novo.'
+            );
+            return;
+        }
 
-        $controllerName = $action[0];
-        $methodName = $action[1];
+        [$controllerName, $methodName] = $this->routes[$method][$uri];
 
-       if (!class_exists($controllerName)) {
+        if (!class_exists($controllerName)) {
+            throw new Exception(
+                "Controller {$controllerName} não encontrado."
+            );
+        }
 
-    throw new Exception(
-        "Controller {$controllerName} não encontrado."
-    );
-}
+        $controller = new $controllerName();
 
-$controller = new $controllerName();
+        if (!method_exists($controller, $methodName)) {
+            throw new Exception(
+                "Método {$methodName} não encontrado em {$controllerName}."
+            );
+        }
 
-if (!method_exists($controller, $methodName)) {
-
-    throw new Exception(
-        "Método {$methodName} não encontrado em {$controllerName}."
-    );
-}
-
-call_user_func([
-    $controller,
-    $methodName
-]);
+        $controller->$methodName();
     }
 }

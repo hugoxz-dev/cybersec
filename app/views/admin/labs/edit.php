@@ -15,6 +15,7 @@ Editar Laboratório
 <form
 method="POST"
 action="<?= BASE_URL ?>/admin/labs/update">
+<?= Csrf::field() ?>
 
 <input
 type="hidden"

@@ -19,6 +19,7 @@ Nova Trilha
 <form
 method="POST"
 action="<?= BASE_URL ?>/admin/paths/store">
+<?= Csrf::field() ?>
 
 <div class="mb-3">
 

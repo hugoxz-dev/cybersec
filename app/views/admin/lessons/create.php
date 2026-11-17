@@ -27,6 +27,7 @@ Nova Aula
 <form
 method="POST"
 action="<?= BASE_URL ?>/admin/lessons/store">
+<?= Csrf::field() ?>
 
 <input
 type="hidden"

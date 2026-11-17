@@ -1,101 +1,57 @@
+<?php $pageTitle = 'Criar conta'; require_once __DIR__ . '/../layouts/header.php'; ?>
 
-<?php require_once __DIR__ . '/../layouts/header.php'; ?>
+<main class="auth-shell">
 
-<div class="container">
+    <section class="auth-hero">
+        <a class="brand" href="<?= BASE_URL ?>/login">
+            <span class="brand-mark" aria-hidden="true"></span>
+            CYBERSEC
+        </a>
 
-<div class="row justify-content-center mt-5">
+        <h1 class="auth-word">COMECE<br>AQUI</h1>
 
-<div class="col-md-6">
+        <p class="lead-initial">Você começa como Iniciante. Cada aula, laboratório e flag resolvida rende XP e libera o próximo nível, até a Elite.</p>
 
-<div class="card shadow">
+        <ul class="auth-facts">
+            <li><strong>5 níveis</strong>de Iniciante a Elite</li>
+            <li><strong>Ranking</strong>global por XP</li>
+            <li><strong>Certificado</strong>com código próprio</li>
+        </ul>
+    </section>
 
-<div class="card-header">
+    <section class="auth-card" aria-labelledby="register-title">
+        <h2 id="register-title">Criar conta</h2>
+        <p class="auth-sub">Leva menos de um minuto.</p>
 
-<h3>Cadastro</h3>
+        <?php if (Session::has('error')): ?>
+            <div class="alert alert-danger" role="alert"><?= htmlspecialchars((string) Session::get('error')) ?></div>
+            <?php Session::remove('error'); ?>
+        <?php endif; ?>
 
-</div>
+        <form action="<?= BASE_URL ?>/register" method="POST">
+<?= Csrf::field() ?>
+            <div class="field">
+                <label for="name">Nome</label>
+                <input id="name" type="text" name="name" class="form-control" autocomplete="name" required autofocus>
+            </div>
 
-<div class="card-body">
+            <div class="field">
+                <label for="email">E-mail</label>
+                <input id="email" type="email" name="email" class="form-control" autocomplete="email" required>
+            </div>
 
-<?php if(Session::has('error')): ?>
+            <div class="field">
+                <label for="password">Senha</label>
+                <input id="password" type="password" name="password" class="form-control" autocomplete="new-password" minlength="6" required>
+                <small class="text-secondary d-block mt-2">Mínimo de 6 caracteres.</small>
+            </div>
 
-<div class="alert alert-danger">
+            <button class="btn btn-glow btn-lg w-100 mt-2" type="submit">Criar conta</button>
+        </form>
 
-<?= Session::get('error'); ?>
+        <p class="auth-switch">Já tem conta? <a href="<?= BASE_URL ?>/login">Entrar</a></p>
+    </section>
 
-</div>
-
-<?php Session::remove('error'); ?>
-
-<?php endif; ?>
-
-<form
-action="<?= BASE_URL ?>/register"
-method="POST">
-
-<div class="mb-3">
-
-<label>Nome</label>
-
-<input
-type="text"
-name="name"
-class="form-control"
-required>
-
-</div>
-
-<div class="mb-3">
-
-<label>Email</label>
-
-<input
-type="email"
-name="email"
-class="form-control"
-required>
-
-</div>
-
-<div class="mb-3">
-
-<label>Senha</label>
-
-<input
-type="password"
-name="password"
-class="form-control"
-required>
-
-</div>
-
-<button
-class="btn btn-success w-100">
-
-Cadastrar
-
-</button>
-
-</form>
-
-<hr>
-
-<a
-href="<?= BASE_URL ?>/login"
-class="btn btn-outline-primary w-100">
-
-Voltar para Login
-
-</a>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
+</main>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>

@@ -171,6 +171,10 @@ class AdminController extends Controller
     $path =
         $pathModel->findById($pathId);
 
+    if (!$path) {
+        $this->redirect('admin/paths');
+    }
+
     $lessons =
         $pathModel->getLessonsAdmin(
             $pathId
@@ -329,7 +333,7 @@ class AdminController extends Controller
 
     if (!$lab) {
 
-        throw new Exception(
+        throw new NotFoundException(
             'Laboratório não encontrado.'
         );
     }

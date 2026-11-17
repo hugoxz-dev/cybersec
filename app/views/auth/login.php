@@ -1,95 +1,56 @@
-<?php require_once __DIR__ . '/../layouts/header.php'; ?>
+<?php $pageTitle = 'Entrar'; require_once __DIR__ . '/../layouts/header.php'; ?>
 
-<script>
-window.onload = function()
-{
-    document.body.classList.add('login-page');
-};
-</script>
+<main class="auth-shell">
 
-<div class="container">
+    <section class="auth-hero">
+        <a class="brand" href="<?= BASE_URL ?>/login">
+            <span class="brand-mark" aria-hidden="true"></span>
+            CYBERSEC
+        </a>
 
-<div class="row justify-content-center mt-5">
+        <h1 class="auth-word">CYBER<br>SEC</h1>
 
-<div class="col-md-5">
+        <p class="lead-initial">Aprenda segurança ofensiva e defensiva na prática: trilhas guiadas, laboratórios com material real e desafios de captura de flag.</p>
 
-<div class="card shadow">
+        <ul class="auth-facts">
+            <li><strong>Trilhas</strong>do básico ao avançado</li>
+            <li><strong>Labs</strong>Web, Linux, Redes, OSINT</li>
+            <li><strong>CTF</strong>flags valendo XP</li>
+        </ul>
+    </section>
 
-<div class="card-header">
+    <section class="auth-card" aria-labelledby="login-title">
+        <h2 id="login-title">Entrar</h2>
+        <p class="auth-sub">Continue de onde parou.</p>
 
-<h3>Login</h3>
+        <?php if (Session::has('error')): ?>
+            <div class="alert alert-danger" role="alert"><?= htmlspecialchars((string) Session::get('error')) ?></div>
+            <?php Session::remove('error'); ?>
+        <?php endif; ?>
 
-</div>
+        <?php if (Session::has('success')): ?>
+            <div class="alert alert-success" role="status"><?= htmlspecialchars((string) Session::get('success')) ?></div>
+            <?php Session::remove('success'); ?>
+        <?php endif; ?>
 
-<div class="card-body">
+        <form action="<?= BASE_URL ?>/login" method="POST">
+<?= Csrf::field() ?>
+            <div class="field">
+                <label for="email">E-mail</label>
+                <input id="email" type="email" name="email" class="form-control" autocomplete="email" required autofocus>
+            </div>
 
-<?php if(Session::has('error')): ?>
+            <div class="field">
+                <label for="password">Senha</label>
+                <input id="password" type="password" name="password" class="form-control" autocomplete="current-password" required>
+            </div>
 
-<div class="alert alert-danger">
+            <button class="btn btn-glow btn-lg w-100 mt-2" type="submit">Entrar</button>
+        </form>
 
-<?= Session::get('error'); ?>
+        <p class="auth-switch">Ainda não tem conta? <a href="<?= BASE_URL ?>/register">Criar conta</a></p>
+    </section>
 
-</div>
-
-<?php Session::remove('error'); ?>
-
-<?php endif; ?>
-
-<form
-action="<?= BASE_URL ?>/login"
-method="POST">
-
-<div class="mb-3">
-
-<label>Email</label>
-
-<input
-type="email"
-name="email"
-class="form-control"
-required>
-
-</div>
-
-<div class="mb-3">
-
-<label>Senha</label>
-
-<input
-type="password"
-name="password"
-class="form-control"
-required>
-
-</div>
-
-<button
-class="btn btn-primary w-100">
-
-Entrar
-
-</button>
-
-</form>
-
-<hr>
-
-<a
-href="<?= BASE_URL ?>/register"
-class="btn btn-outline-secondary w-100">
-
-Criar Conta
-
-</a>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
+</main>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>

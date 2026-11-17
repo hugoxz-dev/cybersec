@@ -57,23 +57,12 @@ class LabController extends Controller
     );
     }
 
+
     public function show(): void
     {
         Auth::requireLogin();
 
-        $id =
-            (int)($_GET['id'] ?? 0);
-
-        $lab =
-            $this->labModel
-                ->findById($id);
-
-        if (!$lab) {
-
-            throw new Exception(
-                'Laboratório não encontrado.'
-            );
-        }
+        $lab = $this->findLab((int)($_GET['id'] ?? 0));
 
         $this->view(
             'labs/show',
@@ -84,94 +73,74 @@ class LabController extends Controller
     }
 
     public function submit(): void
-   {
-    Auth::requireLogin();
+    {
+        Auth::requireLogin();
 
-    $labId =
-        (int)($_POST['lab_id'] ?? 0);
+        $lab = $this->findLab((int)($_POST['lab_id'] ?? 0));
 
-    $answer =
-        trim(
-            $_POST['answer'] ?? ''
+        $labId = (int)$lab['id'];
+        $userId = Auth::id();
+        $limiterKey = $userId . ':' . $labId;
+
+        if (RateLimiter::tooMany('lab', $limiterKey, 10, 60)) {
+
+            Session::set(
+                'error',
+                'Muitas tentativas. Aguarde um minuto e tente de novo.'
+            );
+
+            $this->redirect('lab?id=' . $labId);
+        }
+
+        $answer = trim((string)($_POST['answer'] ?? ''));
+
+        $correct = hash_equals(
+            mb_strtolower(trim($lab['answer'])),
+            mb_strtolower($answer)
         );
 
-    $lab =
-        $this->labModel
-            ->findById($labId);
+        if (!$correct) {
 
-    if (!$lab) {
+            RateLimiter::hit('lab', $limiterKey);
 
-        throw new Exception(
-            'Laboratório não encontrado.'
-        );
+            Session::set('error', 'Resposta incorreta.');
+
+            $this->redirect('lab?id=' . $labId);
+        }
+
+        if ((new LabProgress())->complete($userId, $labId)) {
+
+            (new User())->reward(
+                $userId,
+                (int)$lab['xp_reward'],
+                'LABORATÓRIO',
+                'Concluiu o laboratório: ' . $lab['title']
+            );
+
+            Session::set(
+                'success',
+                'Laboratório concluído! +' . (int)$lab['xp_reward'] . ' XP'
+            );
+
+        } else {
+
+            Session::set(
+                'success',
+                'Resposta correta! Você já havia concluído este laboratório, então nenhum XP foi adicionado.'
+            );
+        }
+
+        $this->redirect('lab?id=' . $labId);
     }
 
-    $correct =
-        strtolower($answer) ===
-        strtolower(
-            trim($lab['answer'])
-        );
+    private function findLab(int $id): array
+    {
+        $lab = $this->labModel->findById($id);
 
-    if (!$correct) {
+        if (!$lab) {
+            throw new NotFoundException('Laboratório não encontrado.');
+        }
 
-        Session::set(
-            'error',
-            'Resposta incorreta.'
-        );
-
-        header(
-            'Location: ' .
-            BASE_URL .
-            '/lab?id=' .
-            $labId
-        );
-
-        exit;
+        return $lab;
     }
-
-    $progress =
-        new LabProgress();
-
-    if (
-        !$progress->isCompleted(
-            Auth::id(),
-            $labId
-        )
-    ) {
-
-        $progress->complete(
-            Auth::id(),
-            $labId
-        );
-
-        $user =
-            new User();
-
-        $user->addXp(
-            Auth::id(),
-            $lab['xp_reward']
-        );
-
-        $user->updateLevel(
-            Auth::id()
-        );
-    }
-
-    Session::set(
-        'success',
-        'Laboratório concluído! +' .
-        $lab['xp_reward'] .
-        ' XP'
-    );
-
-    header(
-        'Location: ' .
-        BASE_URL .
-        '/lab?id=' .
-        $labId
-    );
-
-    exit;
-   }
-
 }

@@ -1,6 +1,8 @@
 RewriteEngine On
 
+# Arquivos e pastas reais (CSS, JS, imagens, uploads) são servidos direto
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 
-RewriteRule ^(.*)$ index.php [QSA,L]
+# Todo o resto vai para o front controller
+RewriteRule ^ index.php [QSA,L]

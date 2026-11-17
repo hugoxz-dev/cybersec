@@ -109,6 +109,29 @@ class Challenge extends Model
         ]);
     }
 
+    /**
+     * Registra a solução. Retorna true só para o primeiro registro;
+     * a chave única garante isso mesmo com envios simultâneos.
+     */
+    public function markSolved(
+        int $userId,
+        int $challengeId
+    ): bool {
+
+        $stmt = $this->db->prepare("
+            INSERT IGNORE INTO challenge_solves
+            (user_id, challenge_id)
+            VALUES (:user_id, :challenge_id)
+        ");
+
+        $stmt->execute([
+            ':user_id' => $userId,
+            ':challenge_id' => $challengeId
+        ]);
+
+        return $stmt->rowCount() === 1;
+    }
+
 public function hasSolved(
     int $userId,
     int $challengeId
@@ -116,10 +139,9 @@ public function hasSolved(
 
     $sql = "
         SELECT id
-        FROM submissions
+        FROM challenge_solves
         WHERE user_id = :user_id
         AND challenge_id = :challenge_id
-        AND is_correct = 1
         LIMIT 1
     ";
 

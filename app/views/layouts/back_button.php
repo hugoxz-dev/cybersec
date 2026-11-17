@@ -1,11 +1,5 @@
-<div class="mb-3">
-
-    <a
-        href="<?= BASE_URL ?>/dashboard"
-        class="btn btn-outline-secondary">
-
-        ← Voltar ao Dashboard
-
-    </a>
-
-</div>
+<?php
+$backHref  = $backHref  ?? BASE_URL . '/dashboard';
+$backLabel = $backLabel ?? 'Voltar ao início';
+?>
+<a class="back-link" href="<?= htmlspecialchars($backHref) ?>"><?= htmlspecialchars($backLabel) ?></a>

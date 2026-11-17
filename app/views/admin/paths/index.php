@@ -74,6 +74,7 @@ Aulas
 method="POST"
 action="<?= BASE_URL ?>/admin/paths/delete"
 style="display:inline;">
+<?= Csrf::field() ?>
 
 <input
 type="hidden"

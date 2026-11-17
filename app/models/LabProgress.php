@@ -2,6 +2,11 @@
 
 class LabProgress extends Model
 {
+    /**
+     * Marca como concluído. Retorna true só se esta chamada concluiu
+     * (linha nova, ou existente que ainda não estava concluída).
+     * Se já estava concluído, nada muda e retorna false.
+     */
     public function complete(
         int $userId,
         int $labId
@@ -23,16 +28,19 @@ class LabProgress extends Model
                 NOW()
             )
             ON DUPLICATE KEY UPDATE
-            completed = 1,
-            completed_at = NOW()
+            completed_at = IF(completed = 1, completed_at, NOW()),
+            completed = 1
         ";
 
         $stmt = $this->db->prepare($sql);
 
-        return $stmt->execute([
+        $stmt->execute([
             ':user_id' => $userId,
             ':lab_id' => $labId
         ]);
+
+        // 1 = inserido, 2 = atualizado, 0 = já estava concluído
+        return $stmt->rowCount() > 0;
     }
 
     public function isCompleted(

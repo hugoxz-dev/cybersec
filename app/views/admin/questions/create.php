@@ -27,6 +27,7 @@ Nova Pergunta
 <form
 method="POST"
 action="<?= BASE_URL ?>/admin/questions/store">
+<?= Csrf::field() ?>
 
 <input
 type="hidden"

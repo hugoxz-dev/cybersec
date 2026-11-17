@@ -64,6 +64,10 @@ Nova Pergunta
 </td>
 
 <td>
+<?= $question['correct_option'] ?>
+</td>
+
+<td>
 
 <a
 href="<?= BASE_URL ?>/admin/questions/edit?id=<?= $question['id'] ?>"
@@ -73,10 +77,6 @@ Editar
 
 </a>
 
-</td>
-
-<td>
-<?= $question['correct_option'] ?>
 </td>
 
 </tr>

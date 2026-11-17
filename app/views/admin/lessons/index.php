@@ -101,11 +101,17 @@ Quiz
 method="POST"
 action="<?= BASE_URL ?>/admin/lessons/delete"
 style="display:inline;">
+<?= Csrf::field() ?>
 
 <input
 type="hidden"
 name="id"
 value="<?= $lesson['id'] ?>">
+
+<input
+type="hidden"
+name="path_id"
+value="<?= $path['id'] ?>">
 
 <button
 type="submit"

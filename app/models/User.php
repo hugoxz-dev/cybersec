@@ -166,10 +166,9 @@ class User extends Model
      ): int {
 
     $sql = "
-        SELECT COUNT(DISTINCT challenge_id) total
-        FROM submissions
+        SELECT COUNT(*) total
+        FROM challenge_solves
         WHERE user_id = :user_id
-        AND is_correct = 1
     ";
 
     $stmt = $this->db->prepare($sql);
@@ -228,6 +227,26 @@ class User extends Model
         'name' => 'Iniciante'
     ];
  }
+
+    /**
+     * Ponto único para conceder XP: soma, atualiza nível,
+     * confere badges e registra a atividade.
+     */
+    public function reward(
+        int $userId,
+        int $xp,
+        string $action,
+        string $description
+    ): void {
+
+        $this->addXp($userId, $xp);
+
+        $this->updateLevel($userId);
+
+        (new Badge())->checkAndAward($userId);
+
+        (new Activity())->create($userId, $action, $description);
+    }
 
     public function addXp(
      int $userId,

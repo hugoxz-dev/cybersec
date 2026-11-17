@@ -1,120 +1,63 @@
 <?php
+$pageTitle = $challenge['title'];
 require_once __DIR__ . '/../layouts/header.php';
-require_once __DIR__ . '/../layouts/navbar.php';
-require_once __DIR__ . '/../layouts/sidebar.php';
+
+$diffLabel = ['Easy' => 'Fácil', 'Medium' => 'Médio', 'Hard' => 'Difícil'][$challenge['difficulty']] ?? $challenge['difficulty'];
+$diffSig = match ($challenge['difficulty']) {
+    'Easy', 'Fácil' => 'sig-easy',
+    'Medium', 'Médio' => 'sig-medium',
+    default => 'sig-hard',
+};
 ?>
 
-<?php require_once __DIR__ . '/../layouts/back_button.php'; ?>
+<main class="main-content">
 
-<div class="main-content">
+    <?php $backHref = BASE_URL . '/challenges'; $backLabel = 'Todos os desafios'; require __DIR__ . '/../layouts/back_button.php'; ?>
 
-<div class="container-fluid">
+    <header class="page-head">
+        <div>
+            <h1 class="page-title"><?= htmlspecialchars($challenge['title']) ?></h1>
+            <div class="path-meta">
+                <span class="chip chip-dot <?= $diffSig ?>"><?= htmlspecialchars($diffLabel) ?></span>
+                <span class="chip sig-xp"><?= (int) $challenge['xp_reward'] ?> XP</span>
+            </div>
+        </div>
+    </header>
 
-<h2 class="mb-3">
-<?= htmlspecialchars($challenge['title']) ?>
-</h2>
+    <?php if (Session::get('error')): ?>
+        <div class="alert alert-danger mb-4" role="alert"><?= htmlspecialchars((string) Session::get('error')) ?></div>
+        <?php Session::remove('error'); ?>
+    <?php endif; ?>
 
-<div class="card shadow">
+    <?php if (Session::get('success')): ?>
+        <div class="alert alert-success mb-4" role="status"><?= htmlspecialchars((string) Session::get('success')) ?></div>
+        <?php Session::remove('success'); ?>
+    <?php endif; ?>
 
-<div class="card-body">
+    <div class="split">
 
-<p>
-<strong>Dificuldade:</strong>
-<?= htmlspecialchars($challenge['difficulty']) ?>
-</p>
+        <section aria-labelledby="brief-title">
+            <h2 class="section-title" id="brief-title">Enunciado</h2>
+            <div class="reading">
+                <?= nl2br(htmlspecialchars($challenge['description'])) ?>
+            </div>
+        </section>
 
-<p>
-<strong>XP:</strong>
-<?= (int)$challenge['xp_reward'] ?>
-</p>
+        <aside class="panel">
+            <h2 class="section-title">Enviar flag</h2>
+            <form method="POST" action="<?= BASE_URL ?>/challenge/submit">
+<?= Csrf::field() ?>
+                <input type="hidden" name="challenge_id" value="<?= (int) $challenge['id'] ?>">
+                <div class="field">
+                    <label for="flag">Flag</label>
+                    <input id="flag" type="text" name="flag" class="form-control form-control-mono" placeholder="FLAG{...}" autocomplete="off" spellcheck="false" required>
+                </div>
+                <button type="submit" class="btn btn-glow w-100">Enviar flag</button>
+            </form>
+        </aside>
 
-<hr>
+    </div>
 
-<p>
-<?= nl2br(
-    htmlspecialchars(
-        $challenge['description']
-    )
-) ?>
-</p>
+</main>
 
-</div>
-
-</div>
-
-<?php if(Session::get('error')): ?>
-
-<div class="alert alert-danger mt-3">
-
-<?= Session::get('error') ?>
-
-</div>
-
-<?php endif; ?>
-
-<?php if(Session::get('success')): ?>
-
-<div class="alert alert-success mt-3">
-
-<?= Session::get('success') ?>
-
-</div>
-
-<?php endif; ?>
-
-<div class="card shadow mt-4">
-
-<div class="card-header">
-
-Enviar Flag
-
-</div>
-
-<div class="card-body">
-
-<form
-method="POST"
-action="<?= BASE_URL ?>/challenge/submit">
-
-<input
-type="hidden"
-name="challenge_id"
-value="<?= $challenge['id'] ?>">
-
-<div class="mb-3">
-
-<label class="form-label">
-
-Flag
-
-</label>
-
-<input
-type="text"
-name="flag"
-class="form-control"
-required>
-
-</div>
-
-<button
-type="submit"
-class="btn btn-success">
-
-Enviar Flag
-
-</button>
-
-</form>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-<?php
-require_once __DIR__ . '/../layouts/footer.php';
-?>
+<?php require_once __DIR__ . '/../layouts/footer.php'; ?>

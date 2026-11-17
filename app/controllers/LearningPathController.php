@@ -37,7 +37,7 @@ class LearningPathController extends Controller
 
     if (!$path) {
 
-        throw new Exception(
+        throw new NotFoundException(
             'Trilha não encontrada.'
         );
     }

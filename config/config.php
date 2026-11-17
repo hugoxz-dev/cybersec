@@ -1,14 +1,26 @@
 <?php
 
-define('APP_NAME', getenv('APP_NAME') ?: 'cybersec');
+/*
+| Valores específicos da máquina (senha do banco, URL, ambiente) ficam em
+| config.local.php, que não deve ser versionado. Veja config.local.example.php.
+*/
+if (file_exists(__DIR__ . '/config.local.php')) {
+    require_once __DIR__ . '/config.local.php';
+}
 
-define('BASE_URL', getenv('BASE_URL') ?: 'http://localhost/cybersec/public');
+defined('APP_NAME') || define('APP_NAME', 'cybersec');
 
-define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
-define('DB_NAME', getenv('DB_NAME') ?: 'cybersec');
-define('DB_USER', getenv('DB_USER') ?: 'root');
-define('DB_PASS', getenv('DB_PASS') !== false ? getenv('DB_PASS') : '');
+// 'development' mostra detalhes de erros; qualquer outro valor esconde.
+defined('APP_ENV') || define('APP_ENV', 'production');
+
+defined('BASE_URL') || define('BASE_URL', 'http://localhost/cybersec/public');
+
+defined('DB_HOST') || define('DB_HOST', 'localhost');
+defined('DB_NAME') || define('DB_NAME', 'cybersec');
+defined('DB_USER') || define('DB_USER', 'root');
+defined('DB_PASS') || define('DB_PASS', '');
 
 define('UPLOAD_PATH', __DIR__ . '/../public/assets/uploads/profiles/');
+define('UPLOAD_MAX_BYTES', 2 * 1024 * 1024);
 
 date_default_timezone_set('America/Sao_Paulo');

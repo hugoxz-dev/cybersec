@@ -1,153 +1,134 @@
 <?php
+$pageTitle = 'Início';
 require_once __DIR__ . '/../layouts/header.php';
-require_once __DIR__ . '/../layouts/navbar.php';
-require_once __DIR__ . '/../layouts/sidebar.php';
+
+// Limiares de nível (espelham a tabela `levels`)
+$levels = ['Iniciante' => 0, 'Aprendiz' => 100, 'Analista' => 300, 'Especialista' => 700, 'Elite' => 1500];
+
+$xp = (int) $stats['xp'];
+$currentFloor = 0;
+$nextName = null;
+$nextXp = null;
+
+foreach ($levels as $name => $required) {
+    if ($xp >= $required) {
+        $currentFloor = $required;
+    } else {
+        $nextName = $name;
+        $nextXp = $required;
+        break;
+    }
+}
+
+$levelPct = $nextXp === null
+    ? 100
+    : (int) round((($xp - $currentFloor) / max(1, $nextXp - $currentFloor)) * 100);
+
+$firstName = explode(' ', trim(Auth::user()['name'] ?? ''))[0];
 ?>
 
-<script>
-document.body.classList.add('dashboard-page');
-</script>
+<main class="main-content">
 
-<div class="main-content">
+    <section class="hero">
 
-<div class="container-fluid">
+        <div>
+            <h1 class="hero-greet">Olá,<strong><?= htmlspecialchars($firstName) ?></strong></h1>
+            <p class="hero-note">Seu progresso em trilhas, laboratórios e desafios aparece aqui.</p>
+        </div>
 
-<h2 class="mb-4">
+        <div class="orb" style="--p: <?= $levelPct ?>" role="img"
+             aria-label="Nível <?= htmlspecialchars($stats['level']) ?>, <?= $levelPct ?>% até o próximo nível">
+            <div class="orb-inner">
+                <div class="orb-level"><?= htmlspecialchars($stats['level']) ?></div>
+                <div class="orb-xp"><?= number_format($xp, 0, ',', '.') ?> XP</div>
+                <div class="orb-next">
+                    <?php if ($nextXp !== null): ?>
+                        Faltam <?= $nextXp - $xp ?> XP para <?= $nextName ?>
+                    <?php else: ?>
+                        Nível máximo
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
 
-🛡️ Painel do Operador
-<p class="text-secondary mb-4">
+        <div class="hero-side">
+            <p class="text-secondary m-0">Próximo passo</p>
+            <div class="cta-stack">
+                <a class="btn btn-primary" href="<?= BASE_URL ?>/paths">Continuar trilha</a>
+                <a class="btn btn-ghost" href="<?= BASE_URL ?>/challenges">Resolver um desafio</a>
+            </div>
+        </div>
 
-Bem-vindo ao CyberSec.
-Continue sua jornada em cibersegurança.
+    </section>
 
-</p>
+    <dl class="stat-strip">
+        <div>
+            <dt>XP acumulado</dt>
+            <dd><?= number_format($xp, 0, ',', '.') ?></dd>
+        </div>
+        <div>
+            <dt>Nível atual</dt>
+            <dd><?= htmlspecialchars($stats['level']) ?></dd>
+        </div>
+        <div>
+            <dt>Desafios resolvidos</dt>
+            <dd><?= (int) $stats['solved'] ?></dd>
+        </div>
+    </dl>
 
-</h2>
+    <div class="dash-grid">
 
-<div class="row">
+        <section aria-labelledby="go-title">
+            <h2 class="section-title" id="go-title">Estudar</h2>
+            <ul class="shortcut-list">
+                <li>
+                    <a href="<?= BASE_URL ?>/paths">
+                        <div><strong>Trilhas</strong><span>Aulas em sequência com quiz no final</span></div>
+                        <span class="go" aria-hidden="true">+</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= BASE_URL ?>/labs">
+                        <div><strong>Laboratórios</strong><span>Analise logs, tráfego e artefatos reais</span></div>
+                        <span class="go" aria-hidden="true">+</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= BASE_URL ?>/challenges">
+                        <div><strong>Desafios</strong><span>Encontre a flag e ganhe XP</span></div>
+                        <span class="go" aria-hidden="true">+</span>
+                    </a>
+                </li>
+            </ul>
+        </section>
 
-<div class="col-md-4">
+        <section aria-labelledby="feed-title">
+            <h2 class="section-title" id="feed-title">Atividade recente</h2>
 
-<div class="card stat-card shadow">
+            <?php if (empty($activities)): ?>
+                <div class="empty">
+                    <strong>Nada por aqui ainda</strong>
+                    Abra sua primeira aula e sua atividade começa a aparecer nesta lista.
+                </div>
+            <?php else: ?>
+                <ul class="feed">
+                    <?php foreach (array_slice($activities, 0, 6) as $activity): ?>
+                        <li>
+                            <div>
+                                <strong><?= htmlspecialchars($activity['action']) ?></strong>
+                                <p><?= htmlspecialchars($activity['description']) ?></p>
+                            </div>
+                            <time datetime="<?= htmlspecialchars($activity['created_at']) ?>">
+                                <?= date('d/m H:i', strtotime($activity['created_at'])) ?>
+                            </time>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+        </section>
 
-<div class="card-body">
+    </div>
 
-<h6>XP Atual</h6>
+</main>
 
-<h2>
-<?= $stats['xp'] ?>
-</h2>
-
-</div>
-
-</div>
-
-</div>
-
-<div class="col-md-4">
-
-<div class="card stat-card shadow">
-
-<div class="card-body">
-
-<h6>Nível Atual</h6>
-
-<h2>
-<?= $stats['level'] ?>
-</h2>
-
-</div>
-
-</div>
-
-</div>
-
-<div class="col-md-4">
-
-<div class="card stat-card shadow">
-
-<div class="card-body">
-
-<h6>Desafios Resolvidos</h6>
-
-<h2>
-<?= $stats['solved'] ?>
-</h2>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-<div class="card shadow mt-4">
-
-<div class="card-header">
-
-Atividades Recentes
-
-</div>
-
-<div class="card-body">
-
-<?php if(empty($activities)): ?>
-
-<p>
-Nenhuma atividade encontrada.
-</p>
-
-<?php else: ?>
-
-<ul class="list-group">
-
-<?php foreach($activities as $activity): ?>
-
-<li class="list-group-item">
-
-<strong>
-
-<?= htmlspecialchars(
-    $activity['action']
-) ?>
-
-</strong>
-
-<br>
-
-<?= htmlspecialchars(
-    $activity['description']
-) ?>
-
-<small
-class="d-block text-muted">
-
-<?= date(
-    'd/m/Y H:i',
-    strtotime(
-        $activity['created_at']
-    )
-) ?>
-
-</small>
-
-</li>
-
-<?php endforeach; ?>
-
-</ul>
-
-<?php endif; ?>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-<?php
-require_once __DIR__ . '/../layouts/footer.php';
-?>
+<?php require_once __DIR__ . '/../layouts/footer.php'; ?>

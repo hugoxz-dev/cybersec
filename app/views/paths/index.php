@@ -1,154 +1,65 @@
 <?php
+$pageTitle = 'Trilhas';
 require_once __DIR__ . '/../layouts/header.php';
-require_once __DIR__ . '/../layouts/navbar.php';
-require_once __DIR__ . '/../layouts/sidebar.php';
-?>
 
-<style>
-.path-card {
-    background: #1e293b;
-    border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 14px;
-    transition: 0.2s ease;
-    overflow: hidden;
-}
-
-.path-card:hover {
-    transform: translateY(-4px);
-    border-color: rgba(59,130,246,0.4);
-}
-
-.path-header {
-    padding: 18px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-
-.path-body {
-    padding: 18px;
-}
-
-.badge-difficulty {
-    font-size: 12px;
-    padding: 4px 10px;
-    border-radius: 20px;
-    display: inline-block;
-}
-
-.diff-iniciante { background: #14532d; color: #4ade80; }
-.diff-intermediario { background: #1e3a8a; color: #60a5fa; }
-.diff-avancado { background: #7f1d1d; color: #f87171; }
-
-.progress {
-    height: 8px;
-    border-radius: 10px;
-    background: rgba(255,255,255,0.08);
-}
-
-.progress-bar {
-    border-radius: 10px;
-}
-
-.path-btn {
-    background: #2563eb;
-    border: none;
-    padding: 10px;
-    border-radius: 10px;
-    width: 100%;
-    color: white;
-    font-weight: 500;
-    transition: 0.2s;
-}
-
-.path-btn:hover {
-    background: #1d4ed8;
-}
-</style>
-
-<div class="main-content">
-
-<h2 class="mb-4">🎓 Trilhas de Aprendizagem</h2>
-
-<div class="row">
-
-<?php foreach($paths as $path): ?>
-
-<?php
 $learningPath = new LearningPath();
-
-$progress = $learningPath->getProgress(
-    $path['id'],
-    Auth::id()
-);
-
-$lessonCount = count(
-    $learningPath->getLessons($path['id'])
-);
-
-$difficulty = strtolower($path['difficulty'] ?? 'iniciante');
+$diffClass = [
+    'iniciante' => 'sig-easy',
+    'intermediario' => 'sig-medium',
+    'intermediário' => 'sig-medium',
+    'avancado' => 'sig-hard',
+    'avançado' => 'sig-hard',
+];
 ?>
 
-<div class="col-md-4 mb-4">
+<main class="main-content">
 
-<div class="path-card">
+    <header class="page-head">
+        <div>
+            <h1 class="page-title">Trilhas de<br>aprendizagem</h1>
+            <p class="page-lead">Cada trilha é uma sequência de aulas. Conclua o quiz de uma aula para liberar a próxima.</p>
+        </div>
+    </header>
 
-<div class="path-header">
+    <?php if (empty($paths)): ?>
+        <div class="empty"><strong>Nenhuma trilha publicada</strong>As trilhas aparecem aqui assim que forem criadas na área administrativa.</div>
+    <?php else: ?>
+    <ul class="path-list">
+        <?php foreach ($paths as $path): ?>
+            <?php
+            $progress = (int) $learningPath->getProgress($path['id'], Auth::id());
+            $lessonCount = count($learningPath->getLessons($path['id']));
+            $difficulty = mb_strtolower($path['difficulty'] ?? 'iniciante');
+            ?>
+            <li class="path-row">
+                <div>
+                    <h3><?= htmlspecialchars($path['title']) ?></h3>
+                    <p><?= htmlspecialchars($path['description']) ?></p>
+                    <div class="path-meta">
+                        <span class="chip chip-dot <?= $diffClass[$difficulty] ?? 'sig-open' ?>"><?= htmlspecialchars(mb_convert_case($difficulty, MB_CASE_TITLE)) ?></span>
+                        <span class="chip"><?= $lessonCount ?> <?= $lessonCount === 1 ? 'aula' : 'aulas' ?></span>
+                        <span class="chip sig-xp"><?= (int) $path['xp_reward'] ?> XP</span>
+                    </div>
+                </div>
 
-<h5 class="mb-2 text-white">
-<?= htmlspecialchars($path['title']) ?>
-</h5>
+                <div class="path-progress">
+                    <small><?= $progress >= 100 ? 'Trilha concluída' : ($progress > 0 ? 'Em andamento' : 'Não iniciada') ?></small>
+                    <div class="meter">
+                        <div class="progress" role="progressbar" aria-valuenow="<?= $progress ?>" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso da trilha">
+                            <div class="progress-bar" style="width: <?= $progress ?>%"></div>
+                        </div>
+                        <span class="meter-value"><?= $progress ?>%</span>
+                    </div>
+                </div>
 
-<span class="badge-difficulty diff-<?= $difficulty ?>">
-<?= ucfirst($difficulty) ?>
-</span>
+                <a href="<?= BASE_URL ?>/path?id=<?= (int) $path['id'] ?>" class="btn <?= $progress > 0 ? 'btn-primary' : 'btn-ghost' ?>">
+                    <?= $progress >= 100 ? 'Revisar trilha' : ($progress > 0 ? 'Continuar trilha' : 'Iniciar trilha') ?>
+                </a>
+            </li>
+        <?php endforeach; ?>
+    </ul>
+    <?php endif; ?>
 
-</div>
-
-<div class="path-body">
-
-<p class="text-secondary small mb-2">
-<?= htmlspecialchars($path['description']) ?>
-</p>
-
-<p class="mb-2 text-light">
-📚 <?= $lessonCount ?> aulas
-</p>
-
-<p class="mb-3 text-light">
-⭐ <?= $path['xp_reward'] ?> XP total
-</p>
-
-<div class="progress mb-3">
-<div class="progress-bar bg-success"
-style="width: <?= $progress ?>%"></div>
-</div>
-
-<div class="d-flex justify-content-between mb-3">
-<small class="text-secondary">
-<?= $progress ?>% concluído
-</small>
-
-<small class="text-secondary">
-🎯 Progresso
-</small>
-</div>
-
-<a href="<?= BASE_URL ?>/path?id=<?= $path['id'] ?>"
-class="path-btn">
-
-<?= $progress > 0 ? 'Continuar trilha' : 'Iniciar trilha' ?>
-
-</a>
-
-</div>
-
-</div>
-
-</div>
-
-<?php endforeach; ?>
-
-</div>
-
-</div>
+</main>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>

@@ -1,14 +1,21 @@
 <?php require_once __DIR__ . '/../layouts/header.php'; ?>
 
-<?php require_once __DIR__ . '/../layouts/back_button.php'; ?>
 
 <div class="container mt-4">
 
+<?php $backHref = BASE_URL . "/challenges"; $backLabel = "Todos os desafios"; require __DIR__ . "/../layouts/back_button.php"; ?>
+
     <h2>Novo Desafio</h2>
+
+    <?php if (Session::has('error')): ?>
+        <div class="alert alert-danger mb-4" role="alert"><?= htmlspecialchars((string) Session::get('error')) ?></div>
+        <?php Session::remove('error'); ?>
+    <?php endif; ?>
 
     <form
         method="POST"
         action="<?= BASE_URL ?>/challenges/store">
+<?= Csrf::field() ?>
 
         <div class="mb-3">
 

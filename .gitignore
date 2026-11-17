@@ -1,21 +1,17 @@
-# Local secrets and environment overrides
-.env
-.env.*
-!.env.example
+# Configuração local (senha do banco, URL, ambiente)
+config/config.local.php
 
-# Dependencies and generated files
+# Dependências e arquivos gerados
 /vendor/
 *.log
 /tmp/
 /cache/
 
-# User-uploaded content
-/public/assets/uploads/*
-!/public/assets/uploads/profiles/
-/public/assets/uploads/profiles/*
-!/public/assets/uploads/profiles/.gitkeep
+# Uploads de usuários
+public/assets/uploads/profiles/*
+!public/assets/uploads/profiles/.gitkeep
 
-# Editor and operating-system files
+# Editor e sistema operacional
 .idea/
 .vscode/
 .DS_Store

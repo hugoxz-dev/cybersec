@@ -2,40 +2,26 @@
 
 class ChallengeController extends Controller
 {
+    private const DIFFICULTIES = ['Easy', 'Medium', 'Hard'];
+
     private Challenge $challengeModel;
 
     private Submission $submissionModel;
 
-    private User $userModel;
-
-    private Activity $activityModel;
-
-   public function __construct()
-   {
-    $this->challengeModel =
-        new Challenge();
-
-    $this->submissionModel =
-        new Submission();
-
-    $this->userModel =
-        new User();
-
-    $this->activityModel =
-        new Activity();
-   }
+    public function __construct()
+    {
+        $this->challengeModel = new Challenge();
+        $this->submissionModel = new Submission();
+    }
 
     public function index(): void
     {
         Auth::requireLogin();
 
-        $challenges =
-            $this->challengeModel->getAll();
-
         $this->view(
             'challenges/index',
             [
-                'challenges' => $challenges
+                'challenges' => $this->challengeModel->getAll()
             ]
         );
     }
@@ -44,77 +30,58 @@ class ChallengeController extends Controller
     {
         Auth::requireAdmin();
 
-        $this->view(
-            'challenges/create'
-        );
+        $this->view('challenges/create');
     }
 
     public function store(): void
     {
-    Auth::requireAdmin();
+        Auth::requireAdmin();
 
-    if (
-        empty($_POST['title']) ||
-        empty($_POST['description']) ||
-        empty($_POST['difficulty']) ||
-        empty($_POST['xp_reward']) ||
-        empty($_POST['flag'])
-    ) {
+        $error = $this->validate($_POST);
 
-        exit('Preencha todos os campos.');
+        if ($error) {
+            Session::set('error', $error);
+            $this->redirect('challenges/create');
+        }
+
+        $this->challengeModel->create($this->formData($_POST));
+
+        Session::set('success', 'Desafio criado.');
+
+        $this->redirect('challenges');
     }
-
-    $this->challengeModel->create([
-        'title' => $_POST['title'],
-        'description' => $_POST['description'],
-        'difficulty' => $_POST['difficulty'],
-        'xp_reward' => $_POST['xp_reward'],
-        'flag' => $_POST['flag']
-    ]);
-
-    $this->redirect('challenges');
-  }
 
     public function edit(): void
     {
-    Auth::requireAdmin();
+        Auth::requireAdmin();
 
-    $id = (int)($_GET['id'] ?? 0);
-
-    $challenge = $this->challengeModel
-        ->findById($id);
-
-    if (!$challenge) {
-
-        http_response_code(404);
-
-        exit('Desafio não encontrado.');
+        $this->view(
+            'challenges/edit',
+            [
+                'challenge' => $this->findChallenge((int)($_GET['id'] ?? 0))
+            ]
+        );
     }
-
-    $this->view(
-        'challenges/edit',
-        [
-            'challenge' => $challenge
-        ]
-    );
- }
 
     public function update(): void
     {
         Auth::requireAdmin();
 
-        $id = (int)$_POST['id'];
+        $challenge = $this->findChallenge((int)($_POST['id'] ?? 0));
+
+        $error = $this->validate($_POST);
+
+        if ($error) {
+            Session::set('error', $error);
+            $this->redirect('challenges/edit?id=' . $challenge['id']);
+        }
 
         $this->challengeModel->update(
-            $id,
-            [
-                'title' => $_POST['title'],
-                'description' => $_POST['description'],
-                'difficulty' => $_POST['difficulty'],
-                'xp_reward' => $_POST['xp_reward'],
-                'flag' => $_POST['flag']
-            ]
+            (int)$challenge['id'],
+            $this->formData($_POST)
         );
+
+        Session::set('success', 'Desafio atualizado.');
 
         $this->redirect('challenges');
     }
@@ -123,170 +90,111 @@ class ChallengeController extends Controller
     {
         Auth::requireAdmin();
 
-        $id = (int)$_POST['id'];
-
-        $this->challengeModel->delete($id);
+        $this->challengeModel->delete((int)($_POST['id'] ?? 0));
 
         $this->redirect('challenges');
     }
 
     public function show(): void
     {
-    Auth::requireLogin();
+        Auth::requireLogin();
 
-    $id = (int)($_GET['id'] ?? 0);
-
-    $challenge = $this->challengeModel
-        ->findById($id);
-
-    if (!$challenge) {
-
-        http_response_code(404);
-
-        exit('Desafio não encontrado.');
-    }
-
-    $this->view(
-        'challenges/show',
-        [
-            'challenge' => $challenge
-        ]
-    );
- }
-
-   public function submitFlag(): void
-   {
-    Auth::requireLogin();
-
-    $challengeId =
-        (int)$_POST['challenge_id'];
-
-    $submittedFlag =
-        trim($_POST['flag']);
-
-    $challenge =
-        $this->challengeModel
-            ->findById(
-                $challengeId
-            );
-
-    if (!$challenge) {
-
-        exit(
-            'Desafio não encontrado.'
+        $this->view(
+            'challenges/show',
+            [
+                'challenge' => $this->findChallenge((int)($_GET['id'] ?? 0))
+            ]
         );
     }
 
-    $userId = Auth::id();
+    public function submitFlag(): void
+    {
+        Auth::requireLogin();
 
-    if (
-        $this->challengeModel
-            ->hasSolved(
-                $userId,
-                $challengeId
-            )
-    ) {
+        $challenge = $this->findChallenge((int)($_POST['challenge_id'] ?? 0));
 
-        Session::set(
-            'error',
-            'Você já resolveu este desafio.'
-        );
+        $challengeId = (int)$challenge['id'];
+        $userId = Auth::id();
+        $back = 'challenge?id=' . $challengeId;
+        $limiterKey = $userId . ':' . $challengeId;
 
-        $this->redirect(
-            'challenge?id='
-            . $challengeId
-        );
-    }
+        if ($this->challengeModel->hasSolved($userId, $challengeId)) {
+            Session::set('error', 'Você já resolveu este desafio.');
+            $this->redirect($back);
+        }
 
-    $correct =
-        $submittedFlag ===
-        $challenge['flag'];
+        if (RateLimiter::tooMany('flag', $limiterKey, 10, 60)) {
+            Session::set('error', 'Muitas tentativas. Aguarde um minuto e tente de novo.');
+            $this->redirect($back);
+        }
 
-    $this->submissionModel
-        ->create(
+        $submittedFlag = trim((string)($_POST['flag'] ?? ''));
+
+        $correct = hash_equals((string)$challenge['flag'], $submittedFlag);
+
+        $this->submissionModel->create(
             $userId,
             $challengeId,
-            $submittedFlag,
+            mb_substr($submittedFlag, 0, 255),
             $correct
         );
 
-    if (!$correct) {
+        if (!$correct) {
+            RateLimiter::hit('flag', $limiterKey);
+            Session::set('error', 'Flag incorreta.');
+            $this->redirect($back);
+        }
 
-        Session::set(
-            'error',
-            'Flag incorreta.'
+        // Só o primeiro registro ganha XP, mesmo com envios simultâneos.
+        if (!$this->challengeModel->markSolved($userId, $challengeId)) {
+            Session::set('error', 'Você já resolveu este desafio.');
+            $this->redirect($back);
+        }
+
+        (new User())->reward(
+            $userId,
+            (int)$challenge['xp_reward'],
+            'DESAFIO',
+            'Resolveu: ' . $challenge['title']
         );
 
-        $this->redirect(
-            'challenge?id='
-            . $challengeId
-        );
+        Session::set('success', 'Desafio concluído!');
+
+        $this->redirect($back);
     }
 
-    $this->userModel->addXp(
-        $userId,
-        (int)$challenge['xp_reward']
-    );
+    private function findChallenge(int $id): array
+    {
+        $challenge = $this->challengeModel->findById($id);
 
-    $this->userModel->updateLevel(
-        $userId
-    );
+        if (!$challenge) {
+            throw new NotFoundException('Desafio não encontrado.');
+        }
 
-    $userModel = new User();
-
-    $badge = new Badge();
-
-     $solved =
-         $userModel
-          ->countSolvedChallenges(
-            $userId
-        );
-
-     if ($solved >= 1) {
-         $badge->award($userId, 2);
-     }
-
-     if ($solved >= 5) {
-         $badge->award($userId, 3);
-     }
-
-     if ($solved >= 10) {
-         $badge->award($userId, 4);
-     }
-
-     $user =
-    $userModel
-        ->findById(
-            $userId
-        );
-
-    if ($user['xp'] >= 100) {
-    $badge->award($userId, 5);
+        return $challenge;
     }
 
-    if ($user['xp'] >= 500) {
-    $badge->award($userId, 6);
+    private function validate(array $input): ?string
+    {
+        return (new Validator($input))
+            ->required('title', 'Título')
+            ->max('title', 150, 'Título')
+            ->required('description', 'Descrição')
+            ->in('difficulty', self::DIFFICULTIES, 'Dificuldade')
+            ->integer('xp_reward', 1, 10000, 'XP')
+            ->required('flag', 'Flag')
+            ->max('flag', 255, 'Flag')
+            ->firstError();
     }
 
-    if ($user['xp'] >= 1000) {
-    $badge->award($userId, 7);
+    private function formData(array $input): array
+    {
+        return [
+            'title' => trim($input['title']),
+            'description' => trim($input['description']),
+            'difficulty' => $input['difficulty'],
+            'xp_reward' => (int)$input['xp_reward'],
+            'flag' => trim($input['flag'])
+        ];
     }
-
-    $this->activityModel->create(
-        $userId,
-        'DESAFIO',
-        'Resolveu: '
-        . $challenge['title']
-    );
-
-    Session::set(
-        'success',
-        'Desafio concluído!'
-    );
-
-    $this->redirect(
-        'challenge?id='
-        . $challengeId
-    );
- }
 }

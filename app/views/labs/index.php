@@ -1,252 +1,79 @@
 <?php
+$pageTitle = 'Laboratórios';
 require_once __DIR__ . '/../layouts/header.php';
-require_once __DIR__ . '/../layouts/navbar.php';
-require_once __DIR__ . '/../layouts/sidebar.php';
-?>
 
-<div class="main-content">
+$activeCategory = $_GET['category'] ?? '';
+$categories = [
+    '' => 'Todos',
+    'Web Security' => 'Web',
+    'Linux' => 'Linux',
+    'Redes' => 'Redes',
+    'OSINT' => 'OSINT',
+    'Forense' => 'Forense',
+    'Logs' => 'Logs',
+];
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-
-    <div>
-
-        <h2 class="mb-1">
-
-            🧪 Laboratórios
-
-        </h2>
-
-        <p class="text-secondary">
-
-            Pratique conceitos reais de cibersegurança.
-
-        </p>
-
-    </div>
-
-</div>
-
-<div class="alert alert-info">
-
-    Laboratórios concluídos:
-
-    <strong>
-
-        <?= $completedLabs ?>
-
-        /
-
-        <?= $totalLabs ?>
-
-    </strong>
-
-</div>
-
-<div class="mb-4">
-
-<a
-href="<?= BASE_URL ?>/labs"
-class="btn btn-outline-light btn-sm">
-
-Todos
-
-</a>
-
-<a
-href="<?= BASE_URL ?>/labs?category=Web Security"
-class="btn btn-outline-info btn-sm">
-
-🌐 Web
-
-</a>
-
-<a
-href="<?= BASE_URL ?>/labs?category=Linux"
-class="btn btn-outline-success btn-sm">
-
-🐧 Linux
-
-</a>
-
-<a
-href="<?= BASE_URL ?>/labs?category=Redes"
-class="btn btn-outline-primary btn-sm">
-
-🌍 Redes
-
-</a>
-
-<a
-href="<?= BASE_URL ?>/labs?category=OSINT"
-class="btn btn-outline-warning btn-sm">
-
-📦 OSINT
-
-</a>
-
-<a
-href="<?= BASE_URL ?>/labs?category=Forense"
-class="btn btn-outline-danger btn-sm">
-
-🔍 Forense
-
-</a>
-
-<a
-href="<?= BASE_URL ?>/labs?category=Logs"
-class="btn btn-outline-secondary btn-sm">
-
-📜 Logs
-
-</a>
-
-</div>
-
-<div class="row">
-
-<?php foreach($labs as $lab): ?>
-
-    <?php
-
-$isCompleted =
-    $progressModel
-        ->isCompleted(
-            Auth::id(),
-            $lab['id']
-        );
-
-?>
-
-<div class="col-lg-4 col-md-6 mb-4">
-
-    <div class="card challenge-card h-100">
-
-        <div class="card-body d-flex flex-column">
-
-            <div class="mb-3">
-
-                <?php
-
-$badge = match($lab['category']) {
-
-    'Web Security' =>
-        'bg-info',
-
-    'Linux' =>
-        'bg-success',
-
-    'Redes' =>
-        'bg-primary',
-
-    'OSINT' =>
-        'bg-warning text-dark',
-
-    'Forense' =>
-        'bg-danger',
-
-    'Logs' =>
-        'bg-secondary',
-
-    'Criptografia' =>
-        'bg-dark',
-
-    'SQL Injection' =>
-        'bg-danger',
-
-    default =>
-        'bg-light text-dark'
+$diffSig = static function (string $d): string {
+    $d = mb_strtolower($d);
+    if (in_array($d, ['easy', 'fácil', 'facil', 'iniciante'], true)) return 'sig-easy';
+    if (in_array($d, ['medium', 'médio', 'medio', 'intermediário', 'intermediario'], true)) return 'sig-medium';
+    return 'sig-hard';
 };
 
+$labPct = $totalLabs > 0 ? (int) round(($completedLabs / $totalLabs) * 100) : 0;
 ?>
 
-<span class="badge <?= $badge ?>">
+<main class="main-content">
 
-    <?= htmlspecialchars(
-        $lab['category']
-    ) ?>
-
-</span>
-
-            </div>
-
-            <h4>
-
-                <?= htmlspecialchars(
-                    $lab['title']
-                ) ?>
-
-            </h4>
-
-            <p class="text-secondary flex-grow-1">
-
-                <?= htmlspecialchars(
-                    $lab['description']
-                ) ?>
-
-            </p>
-
-            <div class="mb-3">
-
-                <span class="badge bg-warning text-dark">
-
-                    <?= htmlspecialchars(
-                        $lab['difficulty']
-                    ) ?>
-
-                </span>
-
-            </div>
-
-            <?php if($isCompleted): ?>
-
-             <span class="badge bg-success">
-
-                  ✔ Concluído
-
-             </span>
-
-            <?php else: ?>
-
-             <span class="badge bg-warning text-dark">
-
-              Disponível
-
-             </span>
-
-             <?php endif; ?>
-
-            <div class="mb-3">
-
-                <strong>
-
-                    <?= $lab['xp_reward'] ?>
-
-                    XP
-
-                </strong>
-
-            </div>
-
-            <a
-            href="<?= BASE_URL ?>/lab?id=<?= $lab['id'] ?>"
-            class="btn btn-primary w-100">
-
-                Abrir Laboratório
-
-            </a>
-
+    <header class="page-head">
+        <div>
+            <h1 class="page-title">Laboratórios</h1>
+            <p class="page-lead">Analise material de casos reais — logs, capturas de rede, artefatos — e responda à pergunta de cada lab.</p>
         </div>
+    </header>
 
+    <div class="summary-bar">
+        <div class="summary-count"><?= (int) $completedLabs ?>/<?= (int) $totalLabs ?><small>concluídos</small></div>
+        <div class="meter">
+            <div class="progress" role="progressbar" aria-valuenow="<?= $labPct ?>" aria-valuemin="0" aria-valuemax="100" aria-label="Laboratórios concluídos">
+                <div class="progress-bar" style="width: <?= $labPct ?>%"></div>
+            </div>
+            <span class="meter-value"><?= $labPct ?>%</span>
+        </div>
     </div>
 
-</div>
+    <nav class="filter-row" aria-label="Filtrar por categoria">
+        <?php foreach ($categories as $value => $label): ?>
+            <a href="<?= BASE_URL ?>/labs<?= $value !== '' ? '?category=' . urlencode($value) : '' ?>"
+               class="<?= $activeCategory === $value ? 'active' : '' ?>"
+               <?= $activeCategory === $value ? 'aria-current="true"' : '' ?>><?= $label ?></a>
+        <?php endforeach; ?>
+    </nav>
 
-<?php endforeach; ?>
+    <?php if (empty($labs)): ?>
+        <div class="empty"><strong>Nenhum laboratório nesta categoria</strong>Escolha outra categoria ou veja todos.</div>
+    <?php else: ?>
+    <div class="tile-grid">
+        <?php foreach ($labs as $lab): ?>
+            <?php $isCompleted = $progressModel->isCompleted(Auth::id(), $lab['id']); ?>
+            <article class="tile <?= $isCompleted ? 'is-done' : '' ?>">
+                <div class="tile-top">
+                    <span class="chip"><?= htmlspecialchars($lab['category']) ?></span>
+                    <span class="chip chip-dot <?= $diffSig((string) $lab['difficulty']) ?>"><?= htmlspecialchars($lab['difficulty']) ?></span>
+                </div>
+                <h3><?= htmlspecialchars($lab['title']) ?></h3>
+                <p><?= htmlspecialchars($lab['description']) ?></p>
+                <div class="tile-foot">
+                    <span class="xp"><?= (int) $lab['xp_reward'] ?> XP</span>
+                    <a href="<?= BASE_URL ?>/lab?id=<?= (int) $lab['id'] ?>" class="btn btn-sm <?= $isCompleted ? 'btn-ghost' : 'btn-primary' ?>">
+                        <?= $isCompleted ? 'Revisar lab' : 'Abrir lab' ?>
+                    </a>
+                </div>
+            </article>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
 
-</div>
+</main>
 
-</div>
-
-<?php
-require_once __DIR__ . '/../layouts/footer.php';
-?>
+<?php require_once __DIR__ . '/../layouts/footer.php'; ?>

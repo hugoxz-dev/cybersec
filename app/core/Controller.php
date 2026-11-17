@@ -18,7 +18,7 @@ if (!file_exists($file)) {
 require_once $file;
     }
 
-    protected function redirect(string $route): void
+    protected function redirect(string $route): never
     {
         header('Location: ' . BASE_URL . '/' . $route);
         exit;

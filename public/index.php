@@ -21,6 +21,11 @@ spl_autoload_register(function ($class) {
     }
 });
 
+ini_set('display_errors', APP_ENV === 'development' ? '1' : '0');
+error_reporting(E_ALL);
+
+set_exception_handler([ErrorPage::class, 'handle']);
+
 Session::start();
 
 $router = new Router();
@@ -41,7 +46,7 @@ $router->get('/register', ['AuthController', 'register']);
 
 $router->post('/register', ['AuthController', 'store']);
 
-$router->get('/logout', ['AuthController', 'logout']);
+$router->post('/logout', ['AuthController', 'logout']);
 
 $router->get('/certificate', [ 'CertificateController', 'index']);
 

@@ -1,46 +1,21 @@
-document.addEventListener(
-    'DOMContentLoaded',
-    () =>
-    {
-        console.log(
-            'cybersec iniciado.'
-        );
+document.addEventListener('DOMContentLoaded', () => {
+    // Menu mobile da nav em pílula
+    const toggle = document.getElementById('navToggle');
+    const topbar = document.getElementById('topbar');
+
+    if (toggle && topbar) {
+        toggle.addEventListener('click', () => {
+            const open = topbar.classList.toggle('nav-open');
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            toggle.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && topbar.classList.contains('nav-open')) {
+                topbar.classList.remove('nav-open');
+                toggle.setAttribute('aria-expanded', 'false');
+                toggle.focus();
+            }
+        });
     }
-);
- const sidebar =
-document.querySelector('.sidebar');
-
-const content =
-document.querySelector('.main-content');
-
-const toggle =
-document.getElementById(
-    'sidebarToggle'
-);
-
-if(localStorage.getItem('sidebar') === 'closed')
-{
-    sidebar.classList.add('collapsed');
-    content.classList.add('expanded');
-}
-
-if(toggle)
-{
-    toggle.addEventListener(
-        'click',
-        function()
-        {
-            sidebar.classList.toggle('collapsed');
-            content.classList.toggle('expanded');
-
-            localStorage.setItem(
-                'sidebar',
-                sidebar.classList.contains(
-                    'collapsed'
-                )
-                ? 'closed'
-                : 'open'
-            );
-        }
-    );
-}
+});

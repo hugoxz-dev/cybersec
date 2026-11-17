@@ -2,6 +2,10 @@
 
 class LessonProgress extends Model
 {
+    /**
+     * Marca como concluída. Retorna true só se esta chamada concluiu;
+     * se já estava concluída, nada muda e retorna false.
+     */
     public function complete(
         int $userId,
         int $lessonId
@@ -23,16 +27,19 @@ class LessonProgress extends Model
                 NOW()
             )
             ON DUPLICATE KEY UPDATE
-            completed = 1,
-            completed_at = NOW()
+            completed_at = IF(completed = 1, completed_at, NOW()),
+            completed = 1
         ";
 
         $stmt = $this->db->prepare($sql);
 
-        return $stmt->execute([
+        $stmt->execute([
             ':user_id' => $userId,
             ':lesson_id' => $lessonId
         ]);
+
+        // 1 = inserido, 2 = atualizado, 0 = já estava concluída
+        return $stmt->rowCount() > 0;
     }
 
     public function isCompleted(

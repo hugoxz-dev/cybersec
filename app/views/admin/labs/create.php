@@ -15,6 +15,7 @@ Novo Laboratório
 <form
 method="POST"
 action="<?= BASE_URL ?>/admin/labs/store">
+<?= Csrf::field() ?>
 
 <div class="mb-3">
 
